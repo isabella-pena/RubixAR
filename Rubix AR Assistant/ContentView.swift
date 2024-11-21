@@ -9,7 +9,8 @@ import SwiftUI
 import RealityKit
 
 struct ContentView : View {
-
+    
+    //RealityView body
     var body: some View {
         RealityView { content in
 
@@ -19,7 +20,9 @@ struct ContentView : View {
             let material = SimpleMaterial(color: .gray, roughness: 0.15, isMetallic: true)
             model.components.set(ModelComponent(mesh: mesh, materials: [material]))
             model.position = [0, 0.05, 0]
-
+            
+            //Enable gesture recognition for the model, to make them tappable
+            model.generateCollisionShapes(recursive: true)
             // Create horizontal plane anchor for the content
             let anchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
             anchor.addChild(model)
