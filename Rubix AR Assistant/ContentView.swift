@@ -7,35 +7,72 @@
 
 import SwiftUI
 import RealityKit
+import ARKit
 
-struct ContentView : View {
-    
-    //RealityView body
+struct ContentView: View {
     var body: some View {
-        RealityView { content in
+        ARViewContainer().edgesIgnoringSafeArea(.all)
+    }
+}
 
-            // Create a cube model
-            let model = Entity()
-            let mesh = MeshResource.generateBox(size: 0.1, cornerRadius: 0.005)
-            let material = SimpleMaterial(color: .gray, roughness: 0.15, isMetallic: true)
-            model.components.set(ModelComponent(mesh: mesh, materials: [material]))
-            model.position = [0, 0.05, 0]
-            
-            //Enable gesture recognition for the model, to make them tappable
-            model.generateCollisionShapes(recursive: true)
-            // Create horizontal plane anchor for the content
-            let anchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: SIMD2<Float>(0.2, 0.2)))
-            anchor.addChild(model)
+struct ARViewContainer: UIViewRepresentable {
+    func makeUIView(context: Context) -> ARView {
+        let arView = ARView(frame: .zero)
 
-            // Add the horizontal plane anchor to the scene
-            content.add(anchor)
-
-            content.camera = .spatialTracking
-
+        // Configure ARKit for image detection
+        let configuration = ARWorldTrackingConfiguration()
+        if let referenceImages = ARReferenceImage.referenceImages(
+            inGroupNamed: "ImageAnchors", // Match the name of your AR Resource Group
+            bundle: nil
+        ) {
+            configuration.detectionImages = referenceImages
+            print("Successfully loaded ARReferenceImages")
+        } else {
+            print("Failed to load ARReferenceImages")
         }
-        .edgesIgnoringSafeArea(.all)
+
+        arView.session.run(configuration)
+
+        // Add a delegate to respond to image detection
+        arView.session.delegate = context.coordinator
+        context.coordinator.arView = arView
+
+        return arView
     }
 
+    func updateUIView(_ uiView: ARView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, ARSessionDelegate {
+        weak var arView: ARView?
+
+        func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+            for anchor in anchors {
+                if let imageAnchor = anchor as? ARImageAnchor {
+                    print("Image detected!")
+                    addCube(to: imageAnchor)
+                }
+            }
+        }
+
+        func addCube(to imageAnchor: ARImageAnchor) {
+            guard let arView = arView else { return }
+
+            // Create a cube to place on the detected image
+            let cube = ModelEntity(mesh: .generateBox(size: 0.1))
+            cube.model?.materials = [SimpleMaterial(color: .red, roughness: 0.5, isMetallic: true)]
+
+            // Create an anchor entity at the detected image's position
+            let anchorEntity = AnchorEntity(world: imageAnchor.transform)
+            anchorEntity.addChild(cube)
+
+            // Add the anchor entity to the ARView scene
+            arView.scene.addAnchor(anchorEntity)
+        }
+    }
 }
 
 #Preview {

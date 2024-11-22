@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "Reality Composer Pro Version 2.0 (448.0.16.0.3)"
+    }
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Root"
+{
+    def Xform "Group" (
+        active = true
+    )
+    {
+        reorder nameChildren = ["Sphere", "_11_22_2024_1"]
+    }
+
+    def "_11_22_2024" (
+        active = true
+        prepend references = @New Folder/11_22_2024.usdz@</object>
+    )
+    {
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}
+
